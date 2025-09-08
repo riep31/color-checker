@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cek Warna & Gradient</title>
+  <style>
+    :root { --gap: 14px; }
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      margin: 0; padding: 24px; background: #0b0e11; color: #e6e6e6;
+    }
+    .card {
+      max-width: 1200px; margin: 0 auto; background: #11151a; border: 1px solid #1e2630;
+      border-radius: 16px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,.3);
+    }
+    .tabs {
+      display: flex; gap: 4px; margin-bottom: 20px; background: #0f141a; border-radius: 12px; padding: 4px;
+    }
+    .tab {
+      flex: 1; padding: 8px 16px; border-radius: 8px; background: transparent; border: none;
+      color: #94a3b8; cursor: pointer; transition: all 0.2s; font-size: 14px; font-weight: 500;
+    }
+    .tab.active { background: #1e293b; color: #e6e6e6; }
+    .tab:hover:not(.active) { background: #1a1f26; color: #cbd5e1; }
+    
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); }
+    @media (max-width: 900px){ .row { grid-template-columns: 1fr; } }
+    
+    .swatch {
+      height: 200px; border-radius: 14px; border: 1px solid #1e2630; position: relative; overflow: hidden;
+    }
+    .swatch label {
+      position: absolute; right: 12px; bottom: 12px; background: rgba(0,0,0,.7);
+      padding: 6px 10px; border-radius: 999px; font-size: 12px; letter-spacing:.2px;
+      max-width: calc(100% - 24px); overflow: hidden; text-overflow: ellipsis;
+    }
+    .stack { display: grid; gap: 12px; }
+    .fld { display: grid; gap: 6px; }
+    .fld label { font-size: 13px; font-weight: 500; opacity: 0.9; }
+    .fld input[type="text"], .fld input[type="number"], .fld select {
+      width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid #273040;
+      background: #0f141a; color: #e6e6e6; font-size: 14px;
+    }
+    .fld select { cursor: pointer; }
+    
+    .gradient-controls { display: grid; gap: 12px; }
+    .color-stop {
+      display: grid; grid-template-columns: auto 1fr auto auto; gap: 8px; align-items: center;
+      padding: 12px; background: #0f141a; border: 1px solid #273040; border-radius: 10px;
+    }
+    .color-stop input[type="color"] {
+      appearance: none; width: 32px; height: 32px; border-radius: 6px; border: 1px solid #273040; background: transparent; padding: 0;
+    }
+    .color-stop input[type="color"]::-webkit-color-swatch { border: none; border-radius: 6px; }
+    .color-stop input[type="color"]::-moz-color-swatch { border: none; border-radius: 6px; }
+    .color-stop input[type="range"] { flex: 1; }
+    .color-stop button {
+      padding: 4px 8px; border-radius: 6px; border: 1px solid #dc2626; background: transparent;
+      color: #ef4444; cursor: pointer; font-size: 12px;
+    }
+    .color-stop button:hover { background: #dc2626; color: white; }
+    
+    .controls-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 600px) { .controls-grid { grid-template-columns: 1fr; } }
+    
+    .add-stop {
+      padding: 8px 16px; border-radius: 8px; border: 1px solid #16a34a; background: transparent;
+      color: #22c55e; cursor: pointer; font-size: 14px; width: 100%;
+    }
+    .add-stop:hover { background: #16a34a; color: white; }
+    
+    .meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gap);}
+    .pill { background: #0f141a; border: 1px solid #273040; border-radius: 12px; padding: 10px 12px; font-size: 13px;}
+    .contrast {
+      display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap);
+    }
+    .tile {
+      border: 1px solid #273040; border-radius: 12px; padding: 14px; display: grid; gap: 10px;
+      background: #0f141a;
+    }
+    .chip { font-size: 12px; padding: 4px 8px; border-radius: 999px; border: 1px solid #273040; display: inline-block; }
+    .sample {
+      border-radius: 10px; padding: 12px; display: grid; gap: 8px; border: 1px dashed #273040;
+    }
+    .ok { color: #7af59a; border-color: #2e6b42; }
+    .warn { color: #ffd479; border-color: #6b5a2e; }
+    .bad { color: #ff8a8a; border-color: #6b2e2e; }
+    .hint { opacity: .7; font-size: 12px; }
+    .footer { margin-top: 18px; opacity: .7; font-size: 12px; }
+    .picker-row { display:flex; gap:10px; align-items:center; }
+    input[type="color"] {
+      appearance: none; width: 36px; height: 36px; border-radius: 8px; border: 1px solid #273040; background: transparent; padding:0;
+    }
+    input[type="color"]::-webkit-color-swatch { border: none; border-radius: 8px; }
+    input[type="color"]::-moz-color-swatch { border: none; border-radius: 8px; }
+    
+    .css-output {
+      background: #0a0d10; border: 1px solid #273040; border-radius: 10px; padding: 12px;
+      font-family: 'Courier New', monospace; font-size: 13px; color: #94a3b8;
+      white-space: pre-wrap; overflow-x: auto;
+    }
+    .copy-btn {
+      padding: 6px 12px; border-radius: 6px; border: 1px solid #3b82f6; background: transparent;
+      color: #60a5fa; cursor: pointer; font-size: 12px; margin-top: 8px;
+    }
+    .copy-btn:hover { background: #3b82f6; color: white; }
+    
+    .preset-gradients {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px;
+    }
+    .preset {
+      height: 60px; border-radius: 8px; border: 1px solid #273040; cursor: pointer;
+      position: relative; overflow: hidden; transition: all 0.2s;
+    }
+    .preset:hover { border-color: #3b82f6; transform: scale(1.02); }
+    .preset::after {
+      content: attr(data-name); position: absolute; bottom: 0; left: 0; right: 0;
+      background: rgba(0,0,0,0.7); padding: 4px 6px; font-size: 10px; text-align: center;
+    }
+    
+    input[type="range"] {
+      -webkit-appearance: none; background: #273040; height: 6px; border-radius: 3px; outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #3b82f6; cursor: pointer;
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 16px; height: 16px; border-radius: 50%; background: #3b82f6; cursor: pointer; border: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Cek Warna & Gradient</h1>
+    
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('solid')">Warna Solid</button>
+      <button class="tab" onclick="switchTab('gradient')">Gradient</button>
+    </div>
+
+    <!-- Solid Color Tab -->
+    <div id="solid" class="tab-content active">
+      <p class="hint">Masukkan HEX (dengan/atau tanpa <code>#</code>) atau pakai pemilih warna.</p>
+      <div class="row">
+        <div class="stack">
+          <div class="swatch" id="swatch">
+            <label id="swatchLabel">#f8fafd</label>
+          </div>
+
+          <div class="fld">
+            <div class="picker-row">
+              <input id="hex" type="text" value="#f8fafd" aria-label="Input HEX"/>
+              <input id="picker" type="color" value="#f8fafd" aria-label="Color picker"/>
+            </div>
+            <span class="hint">Contoh: <code>#f8fafd</code>, <code>f8fafd</code>, <code>#F8FAFD</code></span>
+          </div>
+
+          <div class="meta">
+            <div class="pill" id="rgb">RGB: 248, 250, 253</div>
+            <div class="pill" id="hsl">HSL: 216°, 60%, 98%</div>
+            <div class="pill" id="lum">Luminance: 0.95</div>
+          </div>
+        </div>
+
+        <div class="stack">
+          <div class="contrast">
+            <div class="tile">
+              <div><span class="chip">Teks Hitam di atas Warna</span></div>
+              <div id="blackSamples" class="sample"></div>
+              <div id="blackRating" class="chip"></div>
+            </div>
+            <div class="tile">
+              <div><span class="chip">Teks Putih di atas Warna</span></div>
+              <div id="whiteSamples" class="sample"></div>
+              <div id="whiteRating" class="chip"></div>
+            </div>
+          </div>
+          <div class="tile">
+            <div><span class="chip">Warna di atas Latar</span></div>
+            <div class="sample" id="onWhite" style="background:#ffffff"></div>
+            <div class="sample" id="onBlack" style="background:#000000"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gradient Tab -->
+    <div id="gradient" class="tab-content">
+      <div class="row">
+        <div class="stack">
+          <div class="swatch" id="gradientSwatch">
+            <label id="gradientLabel">Linear Gradient</label>
+          </div>
+
+          <div class="controls-grid">
+            <div class="fld">
+              <label>Jenis Gradient</label>
+              <select id="gradientType" onchange="updateGradient()">
+                <option value="linear">Linear</option>
+                <option value="radial">Radial</option>
+                <option value="conic">Conic</option>
+              </select>
+            </div>
+            <div class="fld">
+              <label>Sudut/Arah</label>
+              <input type="number" id="gradientAngle" value="90" min="0" max="360" onchange="updateGradient()">
+            </div>
+          </div>
+
+          <div class="fld">
+            <label>Preset Gradients</label>
+            <div class="preset-gradients" id="presets"></div>
+          </div>
+        </div>
+
+        <div class="stack">
+          <div class="fld">
+            <label>Color Stops</label>
+            <div class="gradient-controls" id="colorStops"></div>
+            <button class="add-stop" onclick="addColorStop()">+ Tambah Warna</button>
+          </div>
+
+          <div class="fld">
+            <label>CSS Output</label>
+            <div class="css-output" id="cssOutput"></div>
+            <button class="copy-btn" onclick="copyCss()">Copy CSS</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">Penilaian kontras mengacu pada WCAG 2.1: Normal ≥ 4.5:1, Besar (≥18pt atau 14pt bold) ≥ 3:1, AAA Normal ≥ 7:1.</div>
+  </div>
+
+  <script>
+    // Solid color functionality
+    const hexInput = document.getElementById('hex');
+    const picker = document.getElementById('picker');
+    const swatch = document.getElementById('swatch');
+    const swatchLabel = document.getElementById('swatchLabel');
+    const rgbEl = document.getElementById('rgb');
+    const hslEl = document.getElementById('hsl');
+    const lumEl = document.getElementById('lum');
+    const blackSamples = document.getElementById('blackSamples');
+    const whiteSamples = document.getElementById('whiteSamples');
+    const blackRating = document.getElementById('blackRating');
+    const whiteRating = document.getElementById('whiteRating');
+    const onWhite = document.getElementById('onWhite');
+    const onBlack = document.getElementById('onBlack');
+
+    // Gradient functionality
+    const gradientSwatch = document.getElementById('gradientSwatch');
+    const gradientLabel = document.getElementById('gradientLabel');
+    const gradientType = document.getElementById('gradientType');
+    const gradientAngle = document.getElementById('gradientAngle');
+    const colorStopsContainer = document.getElementById('colorStops');
+    const cssOutput = document.getElementById('cssOutput');
+
+    let colorStops = [
+      { color: '#ff6b6b', position: 0 },
+      { color: '#4ecdc4', position: 100 }
+    ];
+
+    const presetGradients = [
+      { name: 'Sunset', stops: [{ color: '#ff9a9e', position: 0 }, { color: '#fecfef', position: 50 }, { color: '#fecfef', position: 100 }] },
+      { name: 'Ocean', stops: [{ color: '#667eea', position: 0 }, { color: '#764ba2', position: 100 }] },
+      { name: 'Forest', stops: [{ color: '#134e5e', position: 0 }, { color: '#71b280', position: 100 }] },
+      { name: 'Fire', stops: [{ color: '#f12711', position: 0 }, { color: '#f5af19', position: 100 }] },
+      { name: 'Purple', stops: [{ color: '#667eea', position: 0 }, { color: '#764ba2', position: 100 }] },
+      { name: 'Miami', stops: [{ color: '#4facfe', position: 0 }, { color: '#00f2fe', position: 100 }] },
+      { name: 'Cherry', stops: [{ color: '#eb3349', position: 0 }, { color: '#f45c43', position: 100 }] },
+      { name: 'Emerald', stops: [{ color: '#348f50', position: 0 }, { color: '#56b4d3', position: 100 }] }
+    ];
+
+    function clamp(v, min, max){ return Math.min(max, Math.max(min, v)); }
+    function normHex(h){
+      h = (h || '').trim();
+      if(!h) return null;
+      if(h[0] !== '#') h = '#' + h;
+      const m = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.exec(h);
+      if(!m) return null;
+      if(m[1].length === 3){
+        const [r,g,b]=m[1].split('').map(ch=>ch+ch).join('');
+        return '#'+[r,g,b].join('');
+      }
+      return h.toLowerCase();
+    }
+    function hexToRgb(h){
+      const n = parseInt(h.slice(1),16);
+      return { r: (n>>16)&255, g:(n>>8)&255, b:n&255 };
+    }
+    function rgbToHsl({r,g,b}){
+      r/=255; g/=255; b/=255;
+      const max=Math.max(r,g,b), min=Math.min(r,g,b);
+      let h,s,l=(max+min)/2;
+      if(max===min){ h=s=0; }
+      else{
+        const d=max-min;
+        s = l>0.5 ? d/(2-max-min) : d/(max+min);
+        switch(max){
+          case r: h=(g-b)/d + (g<b?6:0); break;
+          case g: h=(b-r)/d + 2; break;
+          case b: h=(r-g)/d + 4; break;
+        }
+        h/=6;
+      }
+      return { h: Math.round(h*360), s: Math.round(s*100), l: Math.round(l*100) };
+    }
+    function srgbToLin(c){ c/=255; return c<=0.04045 ? c/12.92 : Math.pow((c+0.055)/1.055, 2.4); }
+    function luminance({r,g,b}){
+      return 0.2126*srgbToLin(r)+0.7152*srgbToLin(g)+0.0722*srgbToLin(b);
+    }
+    function contrast(rgb1, rgb2){
+      const L1 = luminance(rgb1), L2 = luminance(rgb2);
+      const [a,b] = L1 > L2 ? [L1,L2] : [L2,L1];
+      return (a + 0.05) / (b + 0.05);
+    }
+    function rateContrast(cr){
+      if(cr >= 7) return {label:`AAA (${cr.toFixed(2)}:1)`, cls:'ok'};
+      if(cr >= 4.5) return {label:`AA (${cr.toFixed(2)}:1)`, cls:'ok'};
+      if(cr >= 3) return {label:`AA Large (${cr.toFixed(2)}:1)`, cls:'warn'};
+      return {label:`Fail (${cr.toFixed(2)}:1)`, cls:'bad'};
+    }
+
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+      
+      event.target.classList.add('active');
+      document.getElementById(tabName).classList.add('active');
+      
+      if (tabName === 'gradient') {
+        initGradient();
+      }
+    }
+
+    function update(hx){
+      const hex = normHex(hx);
+      if(!hex){ hexInput.style.borderColor = '#6b2e2e'; return; }
+      hexInput.style.borderColor = '#273040';
+      const rgb = hexToRgb(hex);
+      const hsl = rgbToHsl(rgb);
+      const lum = luminance(rgb);
+
+      swatch.style.background = hex;
+      swatchLabel.textContent = hex;
+      picker.value = hex;
+      rgbEl.textContent = `RGB: ${rgb.r}, ${rgb.g}, ${rgb.b}`;
+      hslEl.textContent = `HSL: ${hsl.h}°, ${hsl.s}%, ${hsl.l}%`;
+      lumEl.textContent = `Luminance: ${lum.toFixed(2)}`;
+
+      const black = {r:0,g:0,b:0};
+      const white = {r:255,g:255,b:255};
+      const cBlack = contrast(rgb, black);
+      const cWhite = contrast(rgb, white);
+      const rBlack = rateContrast(cBlack);
+      const rWhite = rateContrast(cWhite);
+
+      blackSamples.innerHTML = `
+        <div style="background:${hex}; color:#000; font-size:16px;">Teks normal 16px</div>
+        <div style="background:${hex}; color:#000; font-size:20px; font-weight:700;">Teks besar 20px bold</div>
+      `;
+      whiteSamples.innerHTML = `
+        <div style="background:${hex}; color:#fff; font-size:16px;">Teks normal 16px</div>
+        <div style="background:${hex}; color:#fff; font-size:20px; font-weight:700;">Teks besar 20px bold</div>
+      `;
+      blackRating.textContent = `Kontras vs Hitam: ${rBlack.label}`;
+      blackRating.className = `chip ${rBlack.cls}`;
+      whiteRating.textContent = `Kontras vs Putih: ${rWhite.label}`;
+      whiteRating.className = `chip ${rWhite.cls}`;
+
+      onWhite.innerHTML = `
+        <div style="color:${hex}">Teks di atas putih</div>
+        <div class="hint">Kontras: ${(contrast(hexToRgb('#ffffff'), rgb)).toFixed(2)}:1</div>
+      `;
+      onBlack.innerHTML = `
+        <div style="color:${hex}">Teks di atas hitam</div>
+        <div class="hint">Kontras: ${(contrast(hexToRgb('#000000'), rgb)).toFixed(2)}:1</div>
+      `;
+    }
+
+    function initGradient() {
+      renderColorStops();
+      renderPresets();
+      updateGradient();
+    }
+
+    function renderColorStops() {
+      colorStopsContainer.innerHTML = '';
+      colorStops.forEach((stop, index) => {
+        const stopEl = document.createElement('div');
+        stopEl.className = 'color-stop';
+        stopEl.innerHTML = `
+          <input type="color" value="${stop.color}" onchange="updateStopColor(${index}, this.value)">
+          <input type="range" min="0" max="100" value="${stop.position}" onchange="updateStopPosition(${index}, this.value)">
+          <span>${stop.position}%</span>
+          ${colorStops.length > 2 ? `<button onclick="removeColorStop(${index})">Hapus</button>` : '<span></span>'}
+        `;
+        colorStopsContainer.appendChild(stopEl);
+      });
+    }
+
+    function renderPresets() {
+      const presetsContainer = document.getElementById('presets');
+      presetsContainer.innerHTML = '';
+      presetGradients.forEach(preset => {
+        const presetEl = document.createElement('div');
+        presetEl.className = 'preset';
+        presetEl.setAttribute('data-name', preset.name);
+        const gradient = `linear-gradient(90deg, ${preset.stops.map(s => `${s.color} ${s.position}%`).join(', ')})`;
+        presetEl.style.background = gradient;
+        presetEl.onclick = () => loadPreset(preset);
+        presetsContainer.appendChild(presetEl);
+      });
+    }
+
+    function loadPreset(preset) {
+      colorStops = [...preset.stops];
+      renderColorStops();
+      updateGradient();
+    }
+
+    function addColorStop() {
+      const newPosition = Math.round((colorStops[colorStops.length-1].position + colorStops[colorStops.length-2].position) / 2);
+      colorStops.push({ color: '#ff6b6b', position: newPosition });
+      colorStops.sort((a, b) => a.position - b.position);
+      renderColorStops();
+      updateGradient();
+    }
+
+    function removeColorStop(index) {
+      if (colorStops.length > 2) {
+        colorStops.splice(index, 1);
+        renderColorStops();
+        updateGradient();
+      }
+    }
+
+    function updateStopColor(index, color) {
+      colorStops[index].color = color;
+      updateGradient();
+    }
+
+    function updateStopPosition(index, position) {
+      colorStops[index].position = parseInt(position);
+      renderColorStops();
+      updateGradient();
+    }
+
+    function updateGradient() {
+      const type = gradientType.value;
+      const angle = gradientAngle.value;
+      const stops = colorStops.map(s => `${s.color} ${s.position}%`).join(', ');
+      
+      let gradient;
+      let cssProperty;
+      
+      if (type === 'linear') {
+        gradient = `linear-gradient(${angle}deg, ${stops})`;
+        cssProperty = `background: linear-gradient(${angle}deg, ${stops});`;
+      } else if (type === 'radial') {
+        gradient = `radial-gradient(circle, ${stops})`;
+        cssProperty = `background: radial-gradient(circle, ${stops});`;
+      } else if (type === 'conic') {
+        gradient = `conic-gradient(from ${angle}deg, ${stops})`;
+        cssProperty = `background: conic-gradient(from ${angle}deg, ${stops});`;
+      }
+      
+      gradientSwatch.style.background = gradient;
+      gradientLabel.textContent = `${type.charAt(0).toUpperCase() + type.slice(1)} Gradient`;
+      cssOutput.textContent = cssProperty;
+    }
+
+    function copyCss() {
+      navigator.clipboard.writeText(cssOutput.textContent).then(() => {
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.textContent = 'Copied!';
+        btn.style.background = '#16a34a';
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.style.background = 'transparent';
+        }, 1500);
+      });
+    }
+
+    // Event listeners
+    hexInput.addEventListener('input', e => update(e.target.value));
+    picker.addEventListener('input', e => {
+      hexInput.value = e.target.value;
+      update(e.target.value);
+    });
+
+    // Initialize
+    update('#f8fafd');
+    initGradient();
+  </script>
+</body>
+</html>
